@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import streamlit as st
 from streamlit.logger import get_logger
+import streamlit_folium as stf
+import osmnx as ox
 
 LOGGER = get_logger(__name__)
 
@@ -24,28 +27,24 @@ def run():
         page_icon="👋",
     )
 
-    st.write("# Welcome to Streamlit! 👋")
+    st.title('Paris')
 
-    st.sidebar.success("Select a demo above.")
+    # Define a smaller bounding box for Paris
+    bbox = (48.8,2.25,48.92,2.4)  # Example smaller bounding box coordinates
 
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
+    # Fetch waterway features within the bounding box using osmnx
+    waterway_data = ox.features_from_bbox(*bbox, tags={'waterway': True})
 
+    # Create a Folium map centered on Paris with Stamen Toner background
+    m = stf.folium.Map(location=[48.8566, 2.3522], zoom_start=12, tiles='Stamen Toner')
+
+    # Add waterway features from osmnx to the map
+    for index, row in waterway_data.iterrows():
+        if row.geometry.geom_type == 'LineString':
+            stf.folium.PolyLine(locations=row.geometry.coords, color='red').add_to(m)
+
+    # Display the map
+    stf.folium_static(m)
 
 if __name__ == "__main__":
     run()
